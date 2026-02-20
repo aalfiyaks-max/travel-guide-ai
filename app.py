@@ -3,13 +3,13 @@ import requests
 import json
 import random
 
-# Create Flask app
+# Flask app
 app = Flask(__name__)
 
-# Your Geoapify API key
+# Geoapify API Key
 GEOAPIFY_KEY = "86f08bb48f934a8cbcc0de5564ea2c13"
 
-# Load dataset
+# Load recommendation dataset
 with open("places.json", "r", encoding="utf-8") as f:
     dataset = json.load(f)
 
@@ -20,14 +20,17 @@ def home():
     return render_template("index.html")
 
 
-# WEATHER API
+# GLOBAL WEATHER API
 @app.route("/weather")
 def weather():
 
     city = request.args.get("city")
 
-    geo_url = f"https://api.geoapify.com/v1/geocode/search?text={city},India&apiKey={GEOAPIFY_KEY}"
+    geo_url = f"https://api.geoapify.com/v1/geocode/search?text={city}&apiKey={GEOAPIFY_KEY}"
     geo_response = requests.get(geo_url).json()
+
+    if not geo_response.get("features"):
+        return jsonify({"error": "City not found"})
 
     lat = geo_response["features"][0]["properties"]["lat"]
     lon = geo_response["features"][0]["properties"]["lon"]
@@ -44,21 +47,24 @@ def weather():
     })
 
 
-# TOURIST PLACES API WITH REAL IMAGES
+# GLOBAL TOURIST PLACES
 @app.route("/places")
 def places():
 
     city = request.args.get("city")
 
-    geo_url = f"https://api.geoapify.com/v1/geocode/search?text={city},India&apiKey={GEOAPIFY_KEY}"
+    geo_url = f"https://api.geoapify.com/v1/geocode/search?text={city}&apiKey={GEOAPIFY_KEY}"
     geo_response = requests.get(geo_url).json()
+
+    if not geo_response.get("features"):
+        return jsonify([])
 
     lat = geo_response["features"][0]["properties"]["lat"]
     lon = geo_response["features"][0]["properties"]["lon"]
 
-    url = f"https://api.geoapify.com/v2/places?categories=tourism&filter=circle:{lon},{lat},5000&limit=5&apiKey={GEOAPIFY_KEY}"
+    places_url = f"https://api.geoapify.com/v2/places?categories=tourism.sights&filter=circle:{lon},{lat},5000&limit=10&apiKey={GEOAPIFY_KEY}"
 
-    response = requests.get(url).json()
+    response = requests.get(places_url).json()
 
     result = []
 
@@ -79,7 +85,7 @@ def places():
     return jsonify(result)
 
 
-# AI RECOMMENDATION WITH REAL IMAGES
+# GLOBAL AI RECOMMENDATION
 @app.route("/recommend")
 def recommend():
 
@@ -98,7 +104,7 @@ def recommend():
 
         place_name = place["name"]
 
-        geo_url = f"https://api.geoapify.com/v1/geocode/search?text={place_name},India&apiKey={GEOAPIFY_KEY}"
+        geo_url = f"https://api.geoapify.com/v1/geocode/search?text={place_name}&apiKey={GEOAPIFY_KEY}"
 
         geo_response = requests.get(geo_url).json()
 
@@ -122,15 +128,18 @@ def recommend():
     return jsonify(result)
 
 
-# HOTELS API WITH REAL IMAGES
+# GLOBAL HOTELS
 @app.route("/hotels")
 def hotels():
 
     city = request.args.get("city")
     budget = int(request.args.get("budget"))
 
-    geo_url = f"https://api.geoapify.com/v1/geocode/search?text={city},India&apiKey={GEOAPIFY_KEY}"
+    geo_url = f"https://api.geoapify.com/v1/geocode/search?text={city}&apiKey={GEOAPIFY_KEY}"
     geo_response = requests.get(geo_url).json()
+
+    if not geo_response.get("features"):
+        return jsonify([])
 
     lat = geo_response["features"][0]["properties"]["lat"]
     lon = geo_response["features"][0]["properties"]["lon"]
@@ -163,6 +172,6 @@ def hotels():
     return jsonify(result)
 
 
-# RUN SERVER
+# Run server
 if __name__ == "__main__":
     app.run(debug=True)
