@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Travel Guide</title>
+
+<style>
+
+:root{
+--bg:#f0f2f5;
+--text:#000;
+--card:#fff;
+--nav:#0a2540;
+}
+
+.dark{
+--bg:#121212;
+--text:#fff;
+--card:#1e1e1e;
+--nav:#000;
+}
+
+body{
+margin:0;
+font-family:'Segoe UI',sans-serif;
+background:var(--bg);
+color:var(--text);
+transition:0.3s;
+}
+
+/* NAVBAR */
+.navbar{
+background:var(--nav);
+color:white;
+padding:15px 30px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.toggle{
+background:#ff5a5f;
+border:none;
+padding:8px 15px;
+color:white;
+cursor:pointer;
+border-radius:6px;
+}
+
+/* HERO */
+.hero{
+height:350px;
+background:url("https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1600") center/cover;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+color:white;
+}
+
+.hero h1{
+font-size:42px;
+}
+
+.search{
+background:rgba(255,255,255,0.9);
+padding:15px;
+border-radius:10px;
+}
+
+input,select{
+padding:10px;
+margin:5px;
+border-radius:6px;
+border:1px solid #ccc;
+}
+
+button{
+padding:10px 20px;
+background:#ff5a5f;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+.section{
+padding:30px;
+}
+
+/* GRID */
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+gap:20px;
+}
+
+/* CARD */
+.card{
+background:var(--card);
+border-radius:12px;
+overflow:hidden;
+box-shadow:0 10px 20px rgba(0,0,0,0.2);
+transition:0.3s;
+cursor:pointer;
+}
+
+.card:hover{
+transform:scale(1.05);
+}
+
+.card img{
+width:100%;
+height:180px;
+object-fit:cover;
+}
+
+.card-body{
+padding:15px;
+}
+
+.price{
+color:#28a745;
+font-weight:bold;
+}
+
+.rating{
+color:#ffc107;
+}
+
+.weather{
+background:var(--card);
+padding:15px;
+border-radius:10px;
+width:250px;
+}
+
+iframe{
+border-radius:10px;
+}
+
+</style>
+
+</head>
+<body id="body">
+
+
+<div class="navbar">
+
+<div>AI Travel Guide</div>
+
+<button class="toggle" onclick="toggleDark()">🌙 Dark Mode</button>
+
+</div>
+
+
+<div class="hero">
+
+<h1>Explore Your Destination</h1>
+
+<div class="search">
+
+<input type="text" id="city" placeholder="Enter city">
+
+<select id="budget">
+<option value="1">Budget</option>
+<option value="3">Mid-range</option>
+<option value="5">Luxury</option>
+</select>
+
+<button onclick="search()">Search</button>
+
+</div>
+
+</div>
+
+
+<div class="section">
+
+<h2>Weather</h2>
+<div id="weather"></div>
+
+</div>
+
+
+<div class="section">
+
+<h2>Tourist Places</h2>
+<div id="places" class="grid"></div>
+
+</div>
+
+
+<div class="section">
+
+<h2>Recommended Places</h2>
+<div id="recommend" class="grid"></div>
+
+</div>
+
+
+<div class="section">
+
+<h2>Hotels</h2>
+<div id="hotels" class="grid"></div>
+
+</div>
+
+
+<div class="section">
+
+<h2>Map</h2>
+<div id="map"></div>
+
+</div>
+
+
+
+<script>
+
+
+// DARK MODE
+function toggleDark(){
+
+document.getElementById("body").classList.toggle("dark");
+
+}
+
+
+// OPEN GOOGLE MAP
+function openMap(place){
+
+let url = `https://www.google.com/maps/search/?api=1&query=${place}`;
+
+window.open(url,"_blank");
+
+}
+
+
+// PRICE
+function price(b){
+
+if(b==1)return "₹800/night";
+if(b==2)return "₹1200/night";
+if(b==3)return "₹2000/night";
+if(b==4)return "₹3500/night";
+return "₹5000/night";
+
+}
+
+
+// RATING
+function rating(){
+
+let r=Math.floor(Math.random()*2)+4;
+return "⭐".repeat(r);
+
+}
+
+
+// SEARCH FUNCTION
+async function search(){
+
+let city=document.getElementById("city").value;
+let budget=document.getElementById("budget").value;
+
+
+// WEATHER
+let w=await fetch(`/weather?city=${city}`);
+let wd=await w.json();
+
+document.getElementById("weather").innerHTML=
+`<div class="weather">
+Temperature: ${wd.temperature} °C<br>
+Wind Speed: ${wd.wind_speed}
+</div>`;
+
+
+// PLACES
+let p=await fetch(`/places?city=${city}`);
+let pd=await p.json();
+
+let ph="";
+
+pd.forEach(x=>{
+ph+=`
+<div class="card" onclick="openMap('${x.name}')">
+<img src="${x.image}">
+<div class="card-body">
+<h3>${x.name}</h3>
+</div>
+</div>
+`;
+});
+
+document.getElementById("places").innerHTML=ph;
+
+
+// RECOMMENDED
+let r=await fetch(`/recommend?budget=${budget}`);
+let rd=await r.json();
+
+let rh="";
+
+rd.forEach(x=>{
+rh+=`
+<div class="card" onclick="openMap('${x.name}')">
+<img src="${x.image}">
+<div class="card-body">
+<h3>${x.name}</h3>
+<div class="price">${price(x.budget)}</div>
+<div class="rating">${rating()}</div>
+</div>
+</div>
+`;
+});
+
+document.getElementById("recommend").innerHTML=rh;
+
+
+// HOTELS
+let h=await fetch(`/hotels?city=${city}&budget=${budget}`);
+let hd=await h.json();
+
+let hh="";
+
+hd.forEach(x=>{
+hh+=`
+<div class="card" onclick="openMap('${x.name}')">
+<img src="${x.image}">
+<div class="card-body">
+<h3>${x.name}</h3>
+<div class="price">${price(x.budget)}</div>
+<div class="rating">${rating()}</div>
+</div>
+</div>
+`;
+});
+
+document.getElementById("hotels").innerHTML=hh;
+
+
+// MAP
+document.getElementById("map").innerHTML=
+`<iframe width="100%" height="400"
+src="https://maps.google.com/maps?q=${city}&output=embed">
+</iframe>`;
+
+}
+
+</script>
+
+
+</body>
+</html>
